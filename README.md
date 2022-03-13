@@ -21,10 +21,11 @@ The repository is structured as follows:
 * DPC++ (version 1.2 or more recent)
 * OpenMP
 * g++ (only tested with 9.3)
+* NVIDIA CUDA for deployment in NVIDIA GPUs (only tested with CUDA 11.4)
+* AMD ROCm for deployment in AMD GPUs (only tested with ROCm 4.2)
+* Intel Level-Zero or OpenCL for deployment in Intel GPUs (only tested with Intel Level-Zero backend)
 
 ### Compilation
-
-
 
 ## Usage example
 
