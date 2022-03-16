@@ -30,6 +30,8 @@ The repository is structured as follows:
 ## Usage example
 
 
+* `Note`: To replicate the results from the IPDPS article, fix the frequency of the CPU to the nominal for all experiments.
+
 ## In papers and reports, please refer to this tool as follows
 
 Marques D., Campos R., Santander-Jiménez S., Matveev, Z., Sousa L., Ilic A. Unlocking Personalized Healthcare on Modern CPUs/GPUs: Three-way Gene Interaction Study. In: 36th IEEE International Parallel & Distributed Processing Symposium (IPDPS 2022).
