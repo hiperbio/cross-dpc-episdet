@@ -8,3 +8,5 @@ This folder contains the CPU implementations considered in the article. Below yo
 * `V4_AVX`: Vectorized with AVX vector intrisics for processors that do not support vectorized population count instructions.
 * `V4_AVX512`: Vectorized with AVX512 vector intrisics for processors that do not support vectorized population count instructions.
 * `V4_POPC_AVX512`: Vectorized with AVX512 vector intrisics for processors that support vectorized population count instructions (IceLake-SP).
+
+The number of threads used for each version can be changed inside the code in the macro NUM_THREADS. 
