@@ -30,7 +30,7 @@ The repository is structured as follows:
 ## Usage example
 
 
-* `Note`: To replicate the results from the IPDPS article, fix the frequency of the CPU to the nominal for all experiments.
+* `Note`: To replicate the results from the IPDPS article, fix the frequency of the CPU to the nominal for all experiments. Since the TSC counter is used to measure the cycles performed by the application (supported in Intel and AMD CPUs), it is necessary to tweak the macro FREQ to the nominal frequency of the tested CPU in order to obtain the execution time.
 
 ## In papers and reports, please refer to this tool as follows
 
