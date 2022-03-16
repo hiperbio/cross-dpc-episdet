@@ -27,6 +27,14 @@ The repository is structured as follows:
 
 ### Compilation
 
+To compile all the CPU codes:
+* cd CPU && make
+
+To compile a specific version of the CPU codes:
+* cd CPU && make version=<version>
+  
+where <version> is a placeolder for the CPU code version (see the README.md inside CPU folder).
+
 ## Usage example
 
 
