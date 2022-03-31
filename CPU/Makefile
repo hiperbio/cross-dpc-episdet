@@ -1,7 +1,7 @@
 CC = g++
 FLAGS = -g -mpopcnt -fopenmp -O3
 
-FLAGS+=-DTHREADS=$(threads) -DFREQ=$(freq)
+FLAGS+=-DNUM_THREADS=$(threads) -DFREQ=$(freq)
 
 ifeq ($(freq),)
 test_freq:
