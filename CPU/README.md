@@ -25,4 +25,4 @@ For versions `V1`, `V2`:
 For versions `V3`, `V4_AVX`, `V4_AVX512`, `V4_POPC_AVX512`:
 `./<version> <num_samples> <num_snps> <block_samples> <block_snps>` 
 
-where <num_samples> are the number of patients in the dataset, <num_snps> the number SNPs in the dataset, and <block_samples> and <block_snps> the blocking factors used for the samples and SNPs used in the versions with cache blocking techniques.
+where <num_samples> are the number of patients in the dataset, <num_snps> the number SNPs in the dataset, while <block_samples> and <block_snps> are the blocking factors for the samples and SNPs used in the versions with cache blocking techniques.
