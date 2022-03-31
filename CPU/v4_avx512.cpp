@@ -28,33 +28,14 @@ int roundUp(int long long numToRound, int multiple)
 }
 
 
-#define TABLE_MAX_SIZE 748 //5060
-#define TABLE_ERROR -0.0810 //-0.08104
+#define TABLE_MAX_SIZE 748 
+#define TABLE_ERROR -0.0810 
 float *addlogtable;
 
-#if defined (ADVISOR)
-    #include <ittnotify.h>
-#endif
 
-#if defined (LIKWID)
-    #include <likwid.h>
-#endif
-
-#define NUM_THREADS 36
-
-#define L1CACHESIZE 32768
-#define L2CACHESIZE 262144
-#define L3CACHESIZE 8388608
-
-#define FREQ 2300000000
-double POM[NUM_THREADS*(L1CACHESIZE+L2CACHESIZE+L3CACHESIZE)/8];
-
-static inline void clear_cache_deep(){
-	unsigned int i;
-	for (i = 0; i < (NUM_THREADS*(L1CACHESIZE+L2CACHESIZE+L3CACHESIZE)/sizeof(double)); i++){
-		POM[i] = 3.14*i;
-	}
-}
+#ifndef NUM_THREADS
+#define NUM_THREADS 1
+#endif 
 
 static inline long long read_tsc_start(){
 	uint64_t d;
@@ -107,16 +88,8 @@ void generate_data(int long long N, int long long M, uint8_t **A, uint8_t **B){
         }
     }
     
-        
-    //Generate Phenotype
-    /* for(i = 0; i < N; i++){
-        //Generate Between 0 and 1
-        (*B)[i] = rand() % 2;
-    } */
-
     //Generate Phenotype 50/50
     for(i = 0; i < N; i++){
-        //Generate Between 0 and 1
         (*B)[i] = 0;
     }
     
@@ -127,82 +100,6 @@ void generate_data(int long long N, int long long M, uint8_t **A, uint8_t **B){
         }
   		(*B)[index] = 1;
     }
-}
-
-void input_data(const char* path, uint8_t** data, uint8_t** phen, int long long* num_pac, int long long* num_snp)
-{
-	int i, j, temp;
-	uint8_t *tdata, *tphen;
-    int samplesize, locisize, nrows, ncols, data_col;
-
-    std::string line;
-	std::ifstream in(path);
-	std::getline(in, line);
-	std::istringstream test(line);
-	std::string word;
-
-	// get "data_col" and "locisize"
-	i = 0;
-	while(!test.eof())
-	{
-		std::getline(test, word, ',');
-		i++;
-	}
-	data_col = i;
-	locisize = i - 1;
-
-	// get "samplesize"
-	j = 0;
-	while(!in.eof())
-	{   
-		std::getline(in, line);
-		j++;
-	}
-	samplesize = j - 1;
-	in.close();
-	
-	nrows = samplesize;
-	ncols = locisize;
-
-	// create "tdata" and "tphen"
-    tdata = (uint8_t*) _mm_malloc(nrows * ncols * sizeof(uint8_t), 64);
-    memset(tdata, 0, nrows * ncols * sizeof(uint8_t));
-    tphen = (uint8_t*) _mm_malloc(nrows * sizeof(uint8_t), 64);
-    memset(tphen, 0, nrows * sizeof(uint8_t));
-
-	std::ifstream in1(path);
-	std::getline(in1, line);
-	std::istringstream test1(line);
-
-	// fill "tdata" and "tphen"
-	i = 0;
-	while(!in1.eof())
-	{
-		if(i == nrows)
-			break;
-		std::getline(in1, line);
-		std::istringstream values(line);
-		j = 0;
-		while(!values.eof())
-		{
-			std::getline(values, word, ',');
-			std::istringstream int_iss(word);
-			int_iss >> temp;
-            if(j < ncols)
-			    tdata[i * ncols + j] = temp;
-            else
-                tphen[i] = temp;
-            j++;
-		}
-		i++;
-	}
-	in1.close();
-
-    (*data) = tdata;
-    (*phen) = tphen;
-    (*num_pac) = nrows;
-    (*num_snp) = ncols;
-	// end
 }
 
 uint8_t * transpose_data(int long long N, int long long M, uint8_t * A){
@@ -356,8 +253,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
     #pragma omp parallel reduction(min:cyc_s) reduction(max:cyc_e)
     {
 
-    int long long counter = 0;
-
     int tid = omp_get_thread_num();
     
     int i, j, k, p, n;
@@ -411,10 +306,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
 
     int v_elems;
 
-    //Generate Frequency Table
-    //uint32_t * freq_table = (uint32_t *) _mm_malloc(2*comb*sizeof(uint32_t), 64);
-    //memset(freq_table, 0, 2*comb*sizeof(uint32_t));
-
     uint32_t* freq_table_I = (uint32_t*) _mm_malloc(2*num_fts_I*num_combs * sizeof(uint32_t), ALIGN);
     memset(freq_table_I, 0, 2*num_fts_I*num_combs*sizeof(uint32_t));
     
@@ -426,23 +317,9 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
 
     int long long cyc_s_local, cyc_e_local;
 
-    clear_cache_deep();
-
     serialize();
 
     cyc_s_local = read_tsc_start();
-
-    #if defined (LIKWID)
-        LIKWID_MARKER_START("epistasis");
-    #endif
-
-    #if defined (SDE)
-        __SSC_MARK(0x111);
-    #endif
-
-    #if defined (ADVISOR)
-        __itt_resume();
-    #endif
 
     // fill frequency table
     #pragma omp for schedule(dynamic)
@@ -466,8 +343,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
 
                 comb_ijk = block_i*block_j*block_k;
 
-                counter+=comb_ijk;
-
                 //RESET FREQUENCY TABLES
                 memset(freq_table_IJK, 0, 2*num_fts_IJK*num_combs*sizeof(uint32_t));
 
@@ -484,7 +359,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                     for(i = 0; i < block_i; i++){
                         SNPA_0 = &data_zeros[xi + i*block_pac];
                         SNPA_1 = &data_zeros[xi + i*block_pac + block_snp*PP_zeros_r];
-                        //SNPA = &data_zeros[xi + i*block_pac*2];
                         xft00 = i*block_j*block_k;
                         for(j = 0; j < block_j; j++){
                             xft0 = xft00 + j*block_k;
@@ -492,7 +366,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                             SNPB_1 = &data_zeros[xj + j*block_pac + block_snp*PP_zeros_r];
                             for(k = 0; k < block_k; k++){
                                 xft = (xft0 + k)*num_combs;
-                                //printf("xft00:%d\n", xft);
                                 SNPC_0 = &data_zeros[xk + k*block_pac];
                                 SNPC_1 = &data_zeros[xk + k*block_pac + block_snp*PP_zeros_r];
 
@@ -1427,12 +1300,10 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                         xft00 = i*block_j*block_k;
                         for(j = 0; j < block_j; j++){
                             xft0 = xft00 + j*block_k;
-                            //xft = (comb_ij + xft0 + j)*num_combs;
                             SNPB_0 = &data_ones[xj + j*block_pac];
                             SNPB_1 = &data_ones[xj + j*block_pac + block_snp*PP_ones_r];
                             for(k = 0; k < block_k; k++){
                                 xft = (comb_ijk + xft0 + k)*num_combs;
-                                //printf("xft1:%d\n", xft);
                                 SNPC_0 = &data_ones[xk + k*block_pac];
                                 SNPC_1 = &data_ones[xk + k*block_pac + block_snp*PP_ones_r];
 
@@ -1871,7 +1742,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                         SNPB_1 = &data_ones[xj + j*block_pac + block_snp*PP_ones_r];
                         for(k = 0; k < block_k; k++){
                             xft = (comb_ijk + xft0 + k)*num_combs;
-                            //printf("xft1:%d\n", xft);
                             SNPC_0 = &data_ones[xk + k*block_pac];
                             SNPC_1 = &data_ones[xk + k*block_pac + block_snp*PP_ones_r];
 
@@ -2371,7 +2241,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                                 best_snp_global[tid][1] = jj + mj;
                                 best_snp_global[tid][2] = kk + mk;
                             }
-                           // printf("%d, %d, %d - Score: %f\n", ii + mi, jj + mj, kk + mk, score);
                         }
                     }
                 }
@@ -2381,8 +2250,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
             v_elems = (block_pac/VEC_ELEMS)*VEC_ELEMS;
 
             comb_ij = (block_i*block_j*(block_j-1))/2;
-
-            counter+=comb_ij;
 
             //RESET FREQUENCY TABLES
             memset(freq_table_IJ, 0, 2 * num_fts_IJ * num_combs * sizeof(uint32_t));
@@ -2396,9 +2263,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                 for(i = 0; i < block_i; i++){
                     SNPA_0 = &data_zeros[xi + i*block_pac];
                     SNPA_1 = &data_zeros[xi + i*block_pac + block_snp*PP_zeros_r];
-                    //xft0 = i*block_j;
                     for(j = 0; j < block_j-1; j++){
-                        //xft = (xft0 + j)*num_combs;
                         SNPB_0 = &data_zeros[xj + j*block_pac];
                         SNPB_1 = &data_zeros[xj + j*block_pac + block_snp*PP_zeros_r];
                         for(k = j+1; k < block_j; k++){
@@ -2837,9 +2702,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
             for(i = 0; i < block_i; i++){
                 SNPA_0 = &data_zeros[xi + i*block_pac];
                 SNPA_1 = &data_zeros[xi + i*block_pac + block_snp*PP_zeros_r];
-                //xft0 = i*block_j;
                 for(j = 0; j < block_j-1; j++){
-                    //xft = (xft0 + j)*num_combs;
                     SNPB_0 = &data_zeros[xj + j*block_pac];
                     SNPB_1 = &data_zeros[xj + j*block_pac + block_snp*PP_zeros_r];
                     for(k = j+1; k < block_j; k++){
@@ -3342,9 +3205,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                 for(i = 0; i < block_i; i++){
                     SNPA_0 = &data_ones[xi + i*block_pac];
                     SNPA_1 = &data_ones[xi + i*block_pac + block_snp*PP_ones_r];
-                    //xft0 = i*block_j;
                     for(j = 0; j < block_j-1; j++){
-                        //xft = (comb_ij + xft0 + j)*num_combs;
                         SNPB_0 = &data_ones[xj + j*block_pac];
                         SNPB_1 = &data_ones[xj + j*block_pac + block_snp*PP_ones_r];
                         for(k = j+1; k < block_j; k++){
@@ -3783,9 +3644,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
             for(i = 0; i < block_i; i++){
                 SNPA_0 = &data_ones[xi + i*block_pac];
                 SNPA_1 = &data_ones[xi + i*block_pac + block_snp*PP_ones_r];
-                //xft0 = i*block_j;
                 for(j = 0; j < block_j-1; j++){
-                    //xft = (comb_ij + xft0 + j)*num_combs;
                     SNPB_0 = &data_ones[xj + j*block_pac];
                     SNPB_1 = &data_ones[xj + j*block_pac + block_snp*PP_ones_r];
                     for(k = j+1; k < block_j; k++){
@@ -4293,7 +4152,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                             best_snp_global[tid][1] = jj + mj;
                             best_snp_global[tid][2] = jj + mk;
                         }
-                        //printf("%d, %d, %d - Score: %f\n", ii + mi, jj + mj, jj + mk, score);
                     }
                     base += (block_j - (mj+1));
                 }
@@ -4302,8 +4160,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
             v_elems = (block_pac/VEC_ELEMS)*VEC_ELEMS;
 
             comb_ij = (block_i*block_j*(block_i-1))/2;
-
-            counter+=comb_ij;
 
             //RESET FREQUENCY TABLES
             memset(freq_table_IJ, 0, 2 * num_fts_IJ * num_combs * sizeof(uint32_t));
@@ -4317,9 +4173,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                 for(i = 0; i < block_i-1; i++){
                     SNPA_0 = &data_zeros[xi + i*block_pac];
                     SNPA_1 = &data_zeros[xi + i*block_pac + block_snp*PP_zeros_r];
-                    //xft0 = i*block_j; 
                     for(j = i+1; j < block_i; j++){
-                        //xft = (xft0 + j)*num_combs;
                         SNPB_0 = &data_zeros[xi + j*block_pac];
                         SNPB_1 = &data_zeros[xi + j*block_pac + block_snp*PP_zeros_r];
                         for(k = 0; k < block_j; k++){
@@ -4758,9 +4612,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
             for(i = 0; i < block_i-1; i++){
                 SNPA_0 = &data_zeros[xi + i*block_pac];
                 SNPA_1 = &data_zeros[xi + i*block_pac + block_snp*PP_zeros_r];
-                //xft0 = i*block_j;
                 for(j = i+1; j < block_i; j++){
-                    //xft = (xft0 + j)*num_combs;
                     SNPB_0 = &data_zeros[xi + j*block_pac];
                     SNPB_1 = &data_zeros[xi + j*block_pac + block_snp*PP_zeros_r];
                     for(k = 0; k < block_j; k++){
@@ -5263,9 +5115,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                 for(i = 0; i < block_i - 1; i++){
                     SNPA_0 = &data_ones[xi + i*block_pac];
                     SNPA_1 = &data_ones[xi + i*block_pac + block_snp*PP_ones_r];
-                    //xft0 = i*block_j;
                     for(j = i + 1; j < block_i; j++){
-                        //xft = (comb_ij + xft0 + j)*num_combs;
                         SNPB_0 = &data_ones[xi + j*block_pac];
                         SNPB_1 = &data_ones[xi + j*block_pac + block_snp*PP_ones_r];
                         for(k = 0; k < block_j; k++){
@@ -5705,9 +5555,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
             for(i = 0; i < block_i - 1; i++){
                 SNPA_0 = &data_ones[xi + i*block_pac];
                 SNPA_1 = &data_ones[xi + i*block_pac + block_snp*PP_ones_r];
-                //xft0 = i*block_j;
                 for(j = i+1; j < block_i; j++){
-                    //xft = (comb_ij + xft0 + j)*num_combs;
                     SNPB_0 = &data_ones[xi + j*block_pac];
                     SNPB_1 = &data_ones[xi + j*block_pac + block_snp*PP_ones_r];
                     for(k = 0; k < block_j; k++){
@@ -6215,7 +6063,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                             best_snp_global[tid][1] = ii + mj;
                             best_snp_global[tid][2] = jj + mk;
                         }
-                        //printf("%d, %d, %d - Score: %f\n", ii + mi, ii + mj, jj + mk, score);
                     }
                 }
                 base += block_j*(block_i - (mi + 1));
@@ -6231,8 +6078,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
         xjj_p1 = jj*PP_ones_r*2;
 
         comb_ii = (block_i*(block_i -1)*(block_i -2))/6;
-
-        counter+=comb_ii;
 
         //Phenotype = 0
         for(pp = 0; pp < PP_zeros - block_pac; pp+=block_pac){
@@ -8139,7 +7984,6 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
                         best_snp_global[tid][1] = ii + mj;
                         best_snp_global[tid][2] = ii + mk;
                     }
-                   // printf("%d, %d, %d - Score: %f\n", ii + mi, ii + mj, ii + mk, score);
                 }
                 base += (block_i - (mj+1));
             }
@@ -8155,21 +7999,7 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
             best_snp[1] = best_snp_global[tid][1];
             best_snp[2] = best_snp_global[tid][2];
         }
-        printf("tid: %d - %lld Combinations\n", tid, counter);
     }
-
-    #if defined (ADVISOR)
-        __itt_pause();
-    #endif
-            
-
-    #if defined (SDE)
-        __SSC_MARK(0x222);
-    #endif
-
-    #if defined (LIKWID)
-        LIKWID_MARKER_STOP("epistasis");
-    #endif
     
     cyc_e_local = read_tsc_end();
     
@@ -8184,32 +8014,14 @@ void process_epi_bin_no_phen_nor_block(uint32_t* data_zeros, uint32_t* data_ones
 
     }
     
-    printf("Time bin_no_phen_nor_block avx omp: %f\n", (double) (cyc_e - cyc_s)/FREQ);
+    printf("Time: %f\n", (double) (cyc_e - cyc_s)/FREQ);
 
-    printf("bin_no_phen_nor_block avx omp Best: %d, %d, %d - Score: %f\n", best_snp[0], best_snp[1], best_snp[2], best_score);
-
-    /* for( j = 0; j < num_combs; j++ ) 
-		printf( " %d", ft[j] );
-    printf("\n");
-    for( j = 0; j < num_combs; j++ ) 
-		printf( " %d", ft[num_combs + j] );
-    printf("\n"); */   
-
+    printf("Best SNPs: %d, %d, %d - Score: %f\n", best_snp[0], best_snp[1], best_snp[2], best_score);
     
 }
 
 int main(int argc, char **argv){
 
-    #if defined (LIKWID)
-        LIKWID_MARKER_INIT;
-
-        #pragma omp parallel
-        {
-            LIKWID_MARKER_THREADINIT;
-        }
-
-        LIKWID_MARKER_REGISTER("epistasis");
-    #endif
 
     int long long num_snp, num_pac;
     int dim_epi;
@@ -8224,20 +8036,14 @@ int main(int argc, char **argv){
     int long long num_snp_r, num_phen_zeros_r, num_phen_ones_r;
 
     dim_epi = 3; //atoi(argv[1]);
-    block_pac = 96; //atoi(argv[4]);
-    block_snp = 5; //atoi(argv[5]);
+    num_pac = atol(argv[1]);
+    num_snp = atol(argv[2]);
+    block_pac = atoi(argv[3]);
+    block_snp = atoi(argv[4]);
     int comb = (int)pow(3.0, dim_epi);
-
-    if(argc == 3)
-    {
-        num_pac = atol(argv[1]);
-        num_snp = atol(argv[2]);
-        generate_data(num_pac, num_snp, &SNP_Data, &Ph_Data);
-    }
-    else if(argc == 2)
-    {
-        input_data(argv[1], &SNP_Data, &Ph_Data, &num_pac, &num_snp);
-    }
+    
+    generate_data(num_pac, num_snp, &SNP_Data, &Ph_Data);
+   
     // create addlog table (up to TABLE_MAX_SIZE positions at max)
 	addlogsize = TABLE_MAX_SIZE;
 	addlogtable = new float[addlogsize];
@@ -8259,10 +8065,6 @@ int main(int argc, char **argv){
     _mm_free(bin_data_ones);
 
     delete addlogtable;
-
-    #if defined (LIKWID)
-        LIKWID_MARKER_CLOSE;
-    #endif
 
     return 0;
 }
