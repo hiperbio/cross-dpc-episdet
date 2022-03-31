@@ -25,20 +25,9 @@ The repository is structured as follows:
 * AMD ROCm for deployment in AMD GPUs (only tested with ROCm 4.2)
 * Intel Level-Zero or OpenCL for deployment in Intel GPUs (only tested with Intel Level-Zero backend)
 
-### Compilation
+### Compilation and Usage
 
-To compile all the CPU codes:
-* cd CPU && make
-
-To compile a specific version of the CPU codes:
-* cd CPU && make version=\<version\>
-  
-where \<version\> is a placeolder for the CPU code version (see the README.md inside CPU folder).
-
-## Usage example
-
-
-* `Note`: To replicate the results from the IPDPS article, fix the frequency of the CPU to the nominal for all experiments. Since the TSC counter is used to measure the cycles performed by the application (supported in Intel and AMD CPUs), it is necessary to tweak the macro FREQ to the nominal frequency of the tested CPU in order to obtain the execution time.
+Check the Readme.md in CPU and GPU folders.
 
 ## In papers and reports, please refer to this tool as follows
 
