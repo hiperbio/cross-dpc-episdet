@@ -305,8 +305,8 @@ int main(int argc, char **argv){
     uint32_t *bin_data, *bin_phen;
 
     dim_epi = 3;
-    num_pac = atol(argv[2]);
-    num_snp = atol(argv[3]);
+    num_pac = atol(argv[1]);
+    num_snp = atol(argv[2]);
 
     int comb = (int)pow(3.0, dim_epi);
 
