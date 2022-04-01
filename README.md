@@ -27,7 +27,7 @@ The repository is structured as follows:
 
 ### Compilation and Usage
 
-Check the Readme.md in CPU and GPU folders.
+Check the README.md in CPU and GPU folders.
 
 ## In papers and reports, please refer to this tool as follows
 
