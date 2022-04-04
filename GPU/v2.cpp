@@ -566,7 +566,7 @@ int main(int argc, char **argv)
     double end = read_tsc_end();
     std::cout << "Time: " << (double) (end - start)/FREQ << std::endl;
     std::cout << "Score: " << score << std::endl;
-    std::cout << "Solution: " << sol / (num_snp_m * num_snp) << " " << (sol % (num_snp_m * num_snp)) / num_snp << " " << (sol % (num_snp_m * num_snp)) % num_snp << std::endl;
+std::cout << "Solution: " << solution / (num_snp_m * num_snp) << " " << (solution % (num_snp_m * num_snp)) / num_snp << " " << (solution % (num_snp_m * num_snp)) % num_snp << std::endl;
 
     _mm_free(SNP_Data);
     _mm_free(Ph_Data);
