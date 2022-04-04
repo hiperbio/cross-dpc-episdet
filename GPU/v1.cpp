@@ -302,14 +302,19 @@ int main(int argc, char **argv)
     queue.wait();
     
     float score = FLT_MAX;
+    uint solution;
     for(x = 0; x < num_snp_m * num_snp * num_snp; x++)
     {
         if(dev_scores[x] < score)
+        {
             score = dev_scores[x];
+            solution = x;
+        }
     }
     double end = read_tsc_end();
     std::cout << "Time: " << (double) (end - start)/FREQ << std::endl;
     std::cout << "Score: " << score << std::endl;
+    std::cout << "Solution: " << sol / (num_snp_m * num_snp) << " " << (sol % (num_snp_m * num_snp)) / num_snp << " " << (sol % (num_snp_m * num_snp)) % num_snp << std::endl;
 
     _mm_free(SNP_Data);
     _mm_free(Ph_Data);
