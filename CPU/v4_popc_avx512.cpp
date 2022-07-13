@@ -4607,7 +4607,7 @@ int main(int argc, char **argv){
     // create addlog table (up to TABLE_MAX_SIZE positions at max)
 	addlogsize = TABLE_MAX_SIZE;
 	addlogtable = new float[addlogsize];
-	for(i = 1; i < addlogsize; i++)
+	for(i = 0; i < addlogsize; i++)
 		addlogtable[i] = my_factorial(i);
 
     SNP_Data = transpose_data(num_pac, num_snp, SNP_Data);
